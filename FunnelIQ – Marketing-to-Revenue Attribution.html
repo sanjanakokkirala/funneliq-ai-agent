@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><title>FunnelIQ – Marketing-to-Revenue Attribution</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>
+:root{--bg:#f6f7fb;--card:#fff;--tx:#1b2030;--mu:#667;--ac:#c2410c;--g:#15803d;--r:#b91c1c;--bd:#e3e6ef;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#12141c;--card:#1b1f2b;--tx:#e8eaf3;--mu:#9aa1b5;--ac:#fb923c;--g:#4ade80;--r:#f87171;--bd:#2b3142;color-scheme:dark}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif;padding:16px}
+.w{max-width:1000px;margin:auto}h1{margin:0;font-size:24px}.sub{color:var(--mu);margin:2px 0 14px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:14px;margin-bottom:14px}
+h2{font-size:16px;margin:0 0 8px}.kp{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:14px}
+.k{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:10px 12px}.k b{display:block;font-size:20px}.k span{color:var(--mu);font-size:12px}
+.sc{overflow-x:auto}table{border-collapse:collapse;width:100%;min-width:600px;font-size:13px}th,td{padding:7px 8px;border-bottom:1px solid var(--bd);text-align:right}th:first-child,td:first-child{text-align:left}th{color:var(--mu);font-weight:600}
+.fs{display:flex;align-items:center;gap:10px;margin:6px 0;font-size:13px}.fs>span{width:120px;flex:none}.fb{height:26px;border-radius:6px;background:var(--ac);color:#fff;display:flex;align-items:center;padding-left:8px;font-size:12px;min-width:34px;white-space:nowrap}.fb.bad{background:var(--r)}
+select,input[type=text]{padding:8px;border:1px solid var(--bd);border-radius:8px;background:var(--bg);color:var(--tx);font:inherit}input[type=text]{flex:1;min-width:160px}
+button{background:var(--ac);color:#fff;border:0;border-radius:8px;padding:8px 14px;font:inherit;cursor:pointer}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.ag p{margin:6px 0;padding:8px 10px;border-radius:8px;background:var(--bg);border-left:3px solid var(--ac)}
+.g{color:var(--g)}.r{color:var(--r)}small{color:var(--mu)}
+</style></head><body><div class="w">
+<h1>FunnelIQ</h1>
+<div class="sub">Marketing-to-revenue attribution · Demo company: Freshworks (B2B SaaS) · 2,000 synthetic leads, ₹ lakh</div>
+<div class="kp" id="kp"></div>
+
+<div class="card"><h2>1 · Where the funnel loses value</h2><div id="fn"></div><small>Red = stage conversion below benchmark. Tick marks show the benchmark rate.</small></div>
+
+<div class="card"><div class="row" style="justify-content:space-between"><h2 style="margin:0">2 · Revenue credit by channel</h2>
+<label><small>Attribution model </small><select id="md"><option value="last">Last touch</option><option value="first">First touch</option><option value="lin">Linear</option><option value="td">Time decay</option><option value="mk" selected>Data-driven (Markov)</option></select></label></div>
+<div class="sc" style="margin-top:8px"><table id="tb"></table></div>
+<small>Compare models: channels that dominate leads but earn little revenue are where marketing spend is leaking.</small></div>
+
+<div class="card ag"><h2>3 · FunnelIQ AI agent</h2><div id="ag"></div>
+<div class="row" style="margin-top:8px"><input type="text" id="q" placeholder="Ask: where are we losing revenue? which channel is overrated?"><button id="ask">Ask</button></div><div id="ans"></div></div>
+
+<div class="card"><h2>How it works (algorithm)</h2><small>1) Integrate ad platforms, web analytics, CRM and billing with identity resolution → 2) Build each lead’s journey: touchpoints → lead → MQL → SQL → opportunity → won → revenue → 3) Measure stage conversion and compare with benchmarks → 4) Attribute revenue with first, last, linear, time-decay and Markov removal-effect models → 5) Score lead quality by channel (revenue per lead, cost per revenue) → 6) Quantify value lost at each stage = (benchmark − actual rate) × entrants × downstream yield → 7) Agent recommends fixes.</small></div>
+</div>
+<script>
+function rng(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+const rnd=rng(11);
+const CH=[["Paid Search",.22,1.2,6.5],["LinkedIn Ads",.14,1.5,14],["Social Ads",.24,.45,2.5],["Webinars",.12,1.3,8],["Content / SEO",.14,1.1,2],["Email",.06,.9,1],["Events",.08,1.6,20]].map(a=>({n:a[0],w:a[1],q:a[2],cpl:a[3]}));
+const NU=["Webinars","Content / SEO","Email"];
+const pick=(nurt)=>{const w=CH.map(c=>c.w*(nurt&&NU.includes(c.n)?2:1)),t=w.reduce((p,q)=>p+q,0);let r=rnd()*t;for(let i=0;i<CH.length;i++){r-=w[i];if(r<=0)return CH[i].n}return CH[0].n};
+const Q=n=>CH.find(c=>c.n==n).q;
+const ST=["Leads","MQL","SQL","Opportunity","Won"],BM=[.5,.45,.6,.3];
+const J=[];const cnt=[0,0,0,0,0];
+for(let i=0;i<2000;i++){const p=[pick(false)];let L=1+(rnd()<.55)+(rnd()<.25)+(rnd()<.1);while(p.length<L)p.push(pick(true));
+ const q=p.reduce((s,c)=>s+Q(c),0)/p.length+.1*(p.length-1);
+ const pr=[Math.min(.9,.4*q+.05),Math.min(.85,.33*q+.1)*.8,Math.min(.9,.45*q+.15),Math.min(.6,.2*q+.08)];
+ let s=0;while(s<4&&rnd()<pr[s])s++;for(let k=0;k<=s;k++)cnt[k]++;
+ J.push({p,won:s==4,v:s==4?2+rnd()*8:0})}
+const won=J.filter(x=>x.won),REV=won.reduce((s,x)=>s+x.v,0),AV=REV/won.length;
+const f=(v,d=0)=>v.toLocaleString("en-IN",{maximumFractionDigits:d,minimumFractionDigits:d});
+const rate=cnt.slice(1).map((c,i)=>c/cnt[i]);
+const loss=rate.map((r,k)=>{let y=AV;for(let j=k+1;j<4;j++)y*=rate[j];return Math.max(0,BM[k]-r)*cnt[k]*y});
+function markov(){const T={};const add=(a,b)=>{(T[a]=T[a]||{})[b]=(T[a][b]||0)+1};
+ J.forEach(x=>{add("S",x.p[0]);for(let i=0;i<x.p.length-1;i++)add(x.p[i],x.p[i+1]);add(x.p[x.p.length-1],x.won?"C":"N")});
+ const val=rm=>{const V={C:1,N:0};CH.forEach(c=>V[c.n]=0);V.S=0;for(let it=0;it<120;it++){for(const s of Object.keys(T)){const tot=Object.values(T[s]).reduce((a,b)=>a+b,0);let v=0;for(const t in T[s]){v+=T[s][t]/tot*(t==rm?0:V[t]==null?0:V[t])}V[s]=v}}return V.S};
+ const b=val(null),e=CH.map(c=>Math.max(0,1-val(c.n)/b)),t=e.reduce((a,c)=>a+c,0);return e.map(x=>x/t)}
+const MK=markov();
+function credit(m){const r=CH.map(()=>0),ix=n=>CH.findIndex(c=>c.n==n);
+ if(m=="mk")return MK.map(x=>x*REV);
+ won.forEach(x=>{const p=x.p;if(m=="first")r[ix(p[0])]+=x.v;else if(m=="last")r[ix(p[p.length-1])]+=x.v;
+  else{const w=p.map((_,i)=>m=="lin"?1:Math.pow(2,i)),t=w.reduce((a,b)=>a+b,0);p.forEach((c,i)=>r[ix(c)]+=x.v*w[i]/t)}});return r}
+const LD=CH.map(c=>J.filter(x=>x.p[0]==c.n).length),COST=CH.map(c=>J.reduce((s,x)=>s+x.p.filter(n=>n==c.n).length,0)*c.cpl/100);
+function render(){const m=document.getElementById("md").value,cr=credit(m);
+ document.getElementById("tb").innerHTML="<tr><th>Channel</th><th>Leads</th><th>Share of leads</th><th>Cost (₹L)</th><th>Revenue credit (₹L)</th><th>Share of revenue</th><th>Revenue per ₹1 spent</th></tr>"+CH.map((c,i)=>{const sl=LD[i]/2000,sr=cr[i]/REV,roi=cr[i]/COST[i];return`<tr><td>${c.n}</td><td>${f(LD[i])}</td><td>${f(sl*100)}%</td><td>${f(COST[i],1)}</td><td>${f(cr[i],1)}</td><td class="${sr<sl*.6?"r":sr>sl*1.3?"g":""}">${f(sr*100)}%</td><td class="${roi<1?"r":roi>3?"g":""}">₹${f(roi,2)}</td></tr>`}).join("")}
+function top(){const m=loss.indexOf(Math.max(...loss));
+ document.getElementById("kp").innerHTML=[["Leads",f(cnt[0])],["Won deals",f(cnt[4])],["Revenue","₹"+f(REV)+" L"],["Lead → won",f(cnt[4]/cnt[0]*100,1)+"%"],["Biggest leak",ST[m]+" → "+ST[m+1]],["Value lost there","₹"+f(loss[m])+" L"]].map(a=>`<div class="k"><span>${a[0]}</span><b>${a[1]}</b></div>`).join("");
+ const mx=cnt[0];document.getElementById("fn").innerHTML=ST.map((s,i)=>{const r=i?rate[i-1]:1,bad=i&&r<BM[i-1];return`<div class="fs"><span>${s}</span><div class="fb ${bad?"bad":""}" style="width:${Math.max(cnt[i]/mx*100,6)}%">${f(cnt[i])}${i?" · "+f(r*100)+"% (bench "+f(BM[i-1]*100)+"%)":""}</div></div>`}).join("")}
+function agent(){const m=loss.indexOf(Math.max(...loss)),mk=credit("mk"),ls=credit("last");
+ const ov=CH.map((c,i)=>[c.n,LD[i]/2000,mk[i]/REV]).sort((a,b)=>(a[2]/a[1])-(b[2]/b[1]));const roi=CH.map((c,i)=>[c.n,mk[i]/COST[i]]).sort((a,b)=>b[1]-a[1]);
+ document.getElementById("ag").innerHTML=`<p><b>Where value leaks:</b> ${ST[m]} → ${ST[m+1]} converts at ${f(rate[m]*100)}% against a ${f(BM[m]*100)}% benchmark, losing about ₹${f(loss[m])} L in revenue.</p>
+ <p><b>Overrated channel:</b> ${ov[0][0]} supplies ${f(ov[0][1]*100)}% of leads but earns only ${f(ov[0][2]*100)}% of data-driven revenue. High lead volume there is inflating the lead numbers without growing revenue.</p>
+ <p><b>Best return:</b> ${roi[0][0]} (₹${f(roi[0][1],2)} per ₹1) and ${roi[1][0]} (₹${f(roi[1][1],2)}). Shift budget toward them and tighten lead qualification on ${ov[0][0]}.</p>`}
+function ans(t){t=t.toLowerCase();const m=loss.indexOf(Math.max(...loss)),mk=credit("mk");
+ if(/leak|lose|loss|drop|where|funnel/.test(t))return ST.slice(0,4).map((s,i)=>`${s}→${ST[i+1]}: ${f(rate[i]*100)}% (bench ${f(BM[i]*100)}%, loss ₹${f(loss[i])} L)`).join(" | ")+".";
+ if(/over|waste|worst|low quality/.test(t)){const o=CH.map((c,i)=>[c.n,mk[i]/COST[i]]).sort((a,b)=>a[1]-b[1])[0];return `${o[0]} has the weakest return: ₹${f(o[1],2)} revenue per ₹1 spent.`}
+ if(/best|top|roi|return/.test(t)){const o=CH.map((c,i)=>[c.n,mk[i]/COST[i]]).sort((a,b)=>b[1]-a[1])[0];return `${o[0]} returns the most: ₹${f(o[1],2)} per ₹1 spent.`}
+ if(/model|last|first|attribution/.test(t))return "Switch the model selector to compare. Last touch over-credits closing channels, first touch over-credits awareness; Markov measures how much conversion drops if a channel is removed.";
+ if(/fix|recommend|improve|action/.test(t))return `Fix ${ST[m]} → ${ST[m+1]} first (faster sales follow-up, clearer MQL criteria, SLA on lead response), then move budget from low-return channels to high-return ones.`;
+ return "Try asking where the funnel leaks, which channel is overrated, the best return, or what to fix first."}
+document.getElementById("md").onchange=render;
+const go=()=>{const q=document.getElementById("q");document.getElementById("ans").innerHTML=`<p><b>Q:</b> ${q.value.replace(/</g,"&lt;")}<br>${ans(q.value)}</p>`};
+document.getElementById("ask").onclick=go;document.getElementById("q").onkeydown=e=>{if(e.key=="Enter")go()};
+top();render();agent();
+</script></body></html>
